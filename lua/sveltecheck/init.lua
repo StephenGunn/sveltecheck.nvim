@@ -62,13 +62,19 @@ M.run = function()
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
+            -- Iterate over each file path match
+            local start_idx = 1
             for filepath in string.gmatch(result, pattern) do
+                local end_idx = result:find(filepath, start_idx, true) or #result
+                local error_text = result:sub(start_idx, math.min(start_idx + 200, end_idx))
+                start_idx = end_idx + 1
+
                 local file, line, col = filepath:match("(.+):(%d+):(%d+)")
                 table.insert(quickfix_list, {
                     filename = file,
                     lnum = tonumber(line),
                     col = tonumber(col),
-                    text = "Error found here",
+                    text = error_text,
                 })
             end
 
