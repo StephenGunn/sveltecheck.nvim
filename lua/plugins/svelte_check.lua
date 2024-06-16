@@ -5,16 +5,12 @@ if vim.api == nil then
 	error("This script must be run inside Neovim!")
 end
 
--- Debugging: Print a message indicating the script is loaded
-print("SvelteCheck plugin loaded successfully.")
-
 -- Configuration settings
 local config = {
-	command = "pnpm run check",
-	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+	command = "pnpm run check", -- Default command to run
+	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Spinner frames for animation
 }
 
--- Variables for spinner animation
 local spinner_index = 1
 local spinner_timer = nil
 
@@ -30,8 +26,6 @@ local function start_spinner()
 			vim.cmd("redrawstatus")
 		end)
 	)
-	-- Debugging: Print a message indicating spinner has started
-	print("Spinner started.")
 end
 
 -- Function to stop the spinner animation
@@ -40,8 +34,6 @@ local function stop_spinner()
 		spinner_timer:stop()
 		spinner_timer:close()
 		spinner_timer = nil
-		-- Debugging: Print a message indicating spinner has stopped
-		print("Spinner stopped.")
 	end
 	vim.o.statusline = ""
 	vim.cmd("redrawstatus")
@@ -94,13 +86,17 @@ local function run_check_and_populate_quickfix()
 end
 
 -- Define command to trigger the SvelteCheck functionality
-vim.cmd("command! SvelteCheck lua require('plugins.svelte_check').run_check_and_populate_quickfix()")
+-- Check if the command already exists before defining it
+if not vim.fn.exists(":SvelteCheck") then
+	vim.cmd("command! -nargs=0 SvelteCheck lua require('plugins.svelte_check').run_check_and_populate_quickfix()")
+end
 
--- Debugging: Print a message indicating command registration
-print("SvelteCheck command registered.")
+-- Debugging: Print a message indicating the script is loaded
+print("SvelteCheck plugin loaded successfully.")
 
--- Return a function to allow configuration of the plugin
+-- Optional: Return a setup function for configuration
 return function(user_config)
+	-- Optional: Allow user to configure the command to run
 	if user_config then
 		config.command = user_config.command or config.command
 	end
