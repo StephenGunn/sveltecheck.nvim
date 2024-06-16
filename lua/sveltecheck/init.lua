@@ -95,7 +95,7 @@ function M.setup(user_config)
         config = vim.tbl_deep_extend("force", config, user_config)
     end
 
-    vim.api.nvim_create_user_command(":SvelteCheck", function()
+    vim.api.nvim_create_user_command("SvelteCheck", function()
         M.run()
     end, { desc = "Run `svelte-check` asynchronously and load the results into a qflist", force = true })
 
