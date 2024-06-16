@@ -2,18 +2,13 @@
 
 Run `svelte-check` asynchronously in your Svelte project with Neovim and see the results in the quick fix list.
 
-````
-# SvelteCheck Neovim Plugin
-
-SvelteCheck is a Neovim plugin for running SvelteKit project checks and navigating errors efficiently using the quickfix list.
-
 ## Installation
 
 ### Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
 Plug 'yourusername/sveltecheck-nvim'
-````
+```
 
 ### Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
