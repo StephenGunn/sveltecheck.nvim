@@ -80,17 +80,21 @@ M.run = function()
                     -- Gather the following lines as error/warning description until the next file path or end of output
                     local j = i + 1
                     while j <= #lines do
-                        local next_line = lines[j]:match("^%s*(.-)%s*$") -- Trim whitespace
-                        -- Break if the next line matches the file path pattern or is empty
-                        if next_line:match(pattern) or next_line == "" then
+                        local next_line = lines[j]
+
+                        -- Stop accumulating when we hit a new file path or an end marker
+                        if
+                            next_line:match(pattern)
+                            or next_line:match("^%s*====")
+                            or next_line:match("^%s*Error: ")
+                            or next_line:match("^%s*Warn: ")
+                        then
                             break
                         end
+
                         -- Accumulate lines for the error text
-                        if error_text == "" then
-                            error_text = next_line
-                        else
-                            error_text = error_text .. " " .. next_line
-                        end
+                        error_text = error_text .. (error_text == "" and "" or " ") .. vim.trim(next_line)
+
                         j = j + 1
                     end
 
