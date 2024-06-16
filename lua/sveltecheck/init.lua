@@ -99,12 +99,23 @@ M.run = function()
                         local error_text = vim.trim(lines[i + 1])
 
                         -- Add the error/warning to the quickfix list
-                        table.insert(quickfix_list, {
+                        local entry = {
                             filename = file,
                             lnum = tonumber(line_num),
                             col = tonumber(col),
                             text = error_text,
-                        })
+                        }
+                        table.insert(quickfix_list, entry)
+
+                        -- Log verbose information about the entry added to quickfix list
+                        local log_message = string.format(
+                            "Added to quickfix: %s|%d col %d| %s",
+                            entry.filename,
+                            entry.lnum,
+                            entry.col,
+                            entry.text
+                        )
+                        print(log_message)
 
                         -- Move to the line after next in the loop
                         i = i + 1
