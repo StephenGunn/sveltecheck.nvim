@@ -4,7 +4,6 @@ local M = {}
 local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
-    full_error_text = false, -- Default to capturing only error messages
 }
 
 -- Current configuration (initialized with defaults)
@@ -63,26 +62,30 @@ M.run = function()
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            local capture_pattern = config.full_error_text and "(.*)" or pattern
-            for filepath, remainder in result:gmatch("(" .. capture_pattern .. ")(.*)") do
-                local file, line, col = filepath:match("(.+):(%d+):(%d+)")
-                local error_text = "Error found here"
-
-                if config.full_error_text then
-                    error_text = remainder:match("^(.-)\n%(.+") or remainder
-                    error_text = string.sub(error_text, 1, 200)
+            -- Iterate over each file path match
+            local start_idx = 1
+            for filepath in string.gmatch(result, pattern) do
+                -- Find the end of the current error block by looking for the next filepath or the end of the message
+                local end_idx = result:find(pattern, start_idx)
+                local error_block
+                if end_idx then
+                    error_block = result:sub(start_idx, end_idx - 1)
+                else
+                    error_block = result:sub(start_idx)
                 end
 
+                -- Extract the error message ending with '(ts)' or the full block if no such marker is found
+                local error_text = error_block:match("(.-%b())%s*%b())") or error_block
+
+                local file, line, col = filepath:match("(.+):(%d+):(%d+)")
                 table.insert(quickfix_list, {
                     filename = file,
                     lnum = tonumber(line),
                     col = tonumber(col),
-                    text = error_text,
+                    text = error_text:match("Error:.+%b()") or error_text,
                 })
 
-                if not config.full_error_text then
-                    break
-                end
+                start_idx = end_idx or #result + 1
             end
 
             if #quickfix_list > 0 then
