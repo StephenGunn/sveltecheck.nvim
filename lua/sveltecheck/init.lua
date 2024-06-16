@@ -5,27 +5,20 @@ local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
-
--- Current configuration (initialized with defaults)
 local config = vim.deepcopy(default_config)
 
 -- Spinner control variables
 local spinner_index = 1
-
--- Initialize spinner_timer as nil initially
 local spinner_timer = nil
 
--- Function to start the spinner and show a continuous notification
 local function start_spinner()
-    -- Display initial message or prepare for spinner
     local notification_id = vim.notify("Running Svelte Check...", "info", {
-        timeout = 0, -- Display indefinitely until cleared manually
+        timeout = 0,
+        log = false,
     })
 
-    -- Start the spinner animation asynchronously
     spinner_timer = vim.loop.new_timer()
 
-    -- Start the timer with appropriate parameters
     spinner_timer:start(
         0, -- initial delay in milliseconds (must be integer)
         100, -- repeat interval in milliseconds (must be integer)
@@ -34,6 +27,7 @@ local function start_spinner()
             vim.notify("Running Svelte Check... " .. config.spinner_frames[spinner_index], "info", {
                 id = notification_id, -- Update existing notification
                 timeout = 0, -- Display indefinitely until cleared manually
+                log = false,
             })
 
             spinner_index = (spinner_index % #config.spinner_frames) + 1
@@ -41,7 +35,6 @@ local function start_spinner()
     )
 end
 
--- Function to stop the spinner and reset the status bar
 local function stop_spinner()
     if spinner_timer then
         spinner_timer:stop()
@@ -52,7 +45,6 @@ local function stop_spinner()
     vim.cmd("redrawstatus")
 end
 
--- Function to run the check command and populate the quickfix list
 M.run = function()
     start_spinner()
 
@@ -81,7 +73,6 @@ M.run = function()
             local lines = vim.split(main_content, "\n")
 
             -- Track whether to capture the next line as error/warning message
-            local capture_next_line = false
             local quickfix_list = {}
 
             for i = 1, #lines do
@@ -106,16 +97,6 @@ M.run = function()
                             text = error_text,
                         }
                         table.insert(quickfix_list, entry)
-
-                        -- Log verbose information about the entry added to quickfix list
-                        local log_message = string.format(
-                            "Added to quickfix: %s|%d col %d| %s",
-                            entry.filename,
-                            entry.lnum,
-                            entry.col,
-                            entry.text
-                        )
-                        print(log_message)
 
                         -- Move to the line after next in the loop
                         i = i + 1
@@ -150,13 +131,10 @@ M.run = function()
         end,
     })
 
-    -- Ensure job handles are cleaned up properly
     vim.fn.jobwait({ job_id }, 1000)
 end
 
--- Function to setup the plugin and register commands
 function M.setup(user_config)
-    -- Merge user-provided config with default config
     if user_config then
         config = vim.tbl_deep_extend("force", config, user_config)
     end
@@ -165,9 +143,7 @@ function M.setup(user_config)
         M.run()
     end, { desc = "Run `svelte-check` asynchronously and load the results into a qflist", force = true })
 
-    -- Print initialization message
     print("SvelteCheck plugin loaded successfully.")
 end
 
--- Export the module table
 return M
