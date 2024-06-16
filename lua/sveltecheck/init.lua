@@ -75,7 +75,7 @@ M.run = function()
             local main_content = result:sub(start_pos, end_pos)
 
             -- Regular expression to match file paths with line and column numbers
-            local pattern = "(/[%w%./_%-]+:%d+:%d+)"
+            local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
 
             -- Split the main content section into lines
             local lines = vim.split(main_content, "\n")
