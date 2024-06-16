@@ -2,18 +2,20 @@
 
 Run `svelte-check` asynchronously in your Svelte project with Neovim and see the results in the quick fix list.
 
+To run, use the `:SvelteCheck` command.
+
 ## Installation
 
 ### Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'yourusername/sveltecheck-nvim'
+Plug 'StephenGunn/sveltecheck-nvim'
 ```
 
 ### Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
-use 'yourusername/sveltecheck-nvim'
+use 'StephenGunn/sveltecheck-nvim'
 ```
 
 ### Using [Lazy](https://github.com/folke/lazy.nvim)
@@ -21,7 +23,7 @@ use 'yourusername/sveltecheck-nvim'
 ```lua
 require('lazy').set({
   {
-    'yourusername/sveltecheck-nvim',
+    'StephenGunn/sveltecheck-nvim',
     config = function()
       require('plugins.svelte_check')({
         command = "npm run check", -- Override default command if needed
