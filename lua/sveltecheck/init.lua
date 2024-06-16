@@ -76,17 +76,9 @@ M.run = function()
                     local file, line_num, col = line:match("(.+):(%d+):(%d+)")
                     local error_text = ""
 
-                    -- Collect lines for error/warning description
-                    for j = i + 1, #lines do
-                        local next_line = lines[j]
-
-                        -- Stop accumulating if we hit a new file path or the end marker
-                        if next_line:match(pattern) or next_line:match("^%s*====") or next_line:match("^%s*%-%-%-") then
-                            break
-                        end
-
-                        -- Include next line as part of the error text
-                        error_text = error_text .. (error_text == "" and "" or "\n") .. vim.trim(next_line)
+                    -- Capture the full next line as the error or warning description
+                    if i + 1 <= #lines then
+                        error_text = vim.trim(lines[i + 1])
                     end
 
                     -- Add the collected information to the quickfix list
