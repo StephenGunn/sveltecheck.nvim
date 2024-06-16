@@ -90,14 +90,16 @@ M.run = function()
 
                 -- Process lines within the relevant block
                 if in_block then
-                    if line:match(pattern) then
-                        -- Extract file, line, and column info from the matched line
-                        local file, line_num, col = line:match("(.+):(%d+):(%d+)")
+                    -- Match file path pattern
+                    local filepath = line:match(pattern)
+                    if filepath then
+                        local file, line_num, col = filepath:match("(.+):(%d+):(%d+)")
                         local error_text = ""
 
-                        -- Capture the full next line as the error or warning description
-                        if i + 1 <= #lines then
-                            error_text = vim.trim(lines[i + 1])
+                        -- Capture the next line as the error or warning description
+                        local next_line = lines[i + 1]
+                        if next_line then
+                            error_text = vim.trim(next_line)
                         end
 
                         -- Add the collected information to the quickfix list
@@ -105,7 +107,7 @@ M.run = function()
                             filename = file,
                             lnum = tonumber(line_num),
                             col = tonumber(col),
-                            text = error_text ~= "" and error_text or "No specific error/warning message provided.",
+                            text = error_text,
                         })
                     end
                 end
