@@ -5,15 +5,15 @@ local M = {}
 
 -- Configuration
 local config = {
-	command = "pnpm run check", -- Default command to run
-	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Spinner frames for animation
+	command = "pnpm run check", -- Default command
+	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Spinner animation frames
 }
 
--- Variables for spinner
+-- Spinner control variables
 local spinner_index = 1
 local spinner_timer = nil
 
--- Function to start the spinner animation
+-- Function to start the spinner in the status bar
 local function start_spinner()
 	spinner_timer = vim.loop.new_timer()
 	spinner_timer:start(
@@ -27,7 +27,7 @@ local function start_spinner()
 	)
 end
 
--- Function to stop the spinner animation
+-- Function to stop the spinner and reset the status bar
 local function stop_spinner()
 	if spinner_timer then
 		spinner_timer:stop()
@@ -38,13 +38,14 @@ local function stop_spinner()
 	vim.cmd("redrawstatus")
 end
 
--- Function to run the check and populate quickfix list
+-- Function to run the check command and populate the quickfix list
 local function run_check_and_populate_quickfix()
 	start_spinner()
-
 	local function on_output(_, data, event)
 		if event == "stdout" or event == "stderr" then
 			local result = table.concat(data, "\n")
+
+			-- Pattern to match file paths with line and character numbers
 			local pattern = "(/[%w%./_%-]+:%d+:%d+)"
 			local quickfix_list = {}
 
@@ -67,31 +68,31 @@ local function run_check_and_populate_quickfix()
 		end
 	end
 
-	local job_id = vim.fn.jobstart(config.command, {
+	vim.fn.jobstart(config.command, {
 		stdout_buffered = true,
 		stderr_buffered = true,
-		on_stdout = on_output,
-		on_stderr = on_output,
-		on_exit = function(_, exit_code, _)
+		on_stdout = function(_, data)
+			on_output(_, data, "stdout")
+		end,
+		on_stderr = function(_, data)
+			on_output(_, data, "stderr")
+		end,
+		on_exit = function(_, exit_code)
 			stop_spinner()
 			if exit_code ~= 0 then
 				print(config.command .. " command failed with exit code: " .. exit_code)
 			end
 		end,
 	})
-
-	-- Ensure job handles are cleaned up properly
-	vim.fn.jobwait({ job_id }, 1000)
 end
 
--- Command registration
+-- Function to setup the plugin and register commands
 function M.setup(user_config)
 	if user_config then
-		-- Merge user-provided config with default config
-		config = vim.tbl_deep_extend("force", config, user_config)
+		config.command = user_config.command or config.command
 	end
 
-	-- Define command to trigger the SvelteCheck functionality
+	-- Register the SvelteCheck command
 	if not vim.fn.exists(":SvelteCheck") then
 		vim.cmd("command! -nargs=0 SvelteCheck lua require('plugins.svelte_check').run_check_and_populate_quickfix()")
 	end
