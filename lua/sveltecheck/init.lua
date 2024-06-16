@@ -67,28 +67,50 @@ M.run = function()
             -- Split the output into lines
             local lines = vim.split(result, "\n")
 
+            -- Track if we are currently within the relevant block (between delimiters)
+            local in_block = false
+            local start_delimiter = "^==+"
+            local end_delimiter = "^==+"
+
             -- Iterate over lines to find file paths and collect associated error/warning messages
             for i = 1, #lines do
                 local line = lines[i]
 
-                if line:match(pattern) then
-                    -- Extract file, line, and column info from the matched line
-                    local file, line_num, col = line:match("(.+):(%d+):(%d+)")
-                    local error_text = ""
-
-                    -- Capture the full next line as the error or warning description
-                    if i + 1 <= #lines then
-                        error_text = vim.trim(lines[i + 1])
-                    end
-
-                    -- Add the collected information to the quickfix list
-                    table.insert(quickfix_list, {
-                        filename = file,
-                        lnum = tonumber(line_num),
-                        col = tonumber(col),
-                        text = error_text ~= "" and error_text or "No specific error/warning message provided.",
-                    })
+                -- Check for start delimiter to indicate beginning of relevant block
+                if line:match(start_delimiter) then
+                    in_block = true
+                    goto continue
                 end
+
+                -- Check for end delimiter to indicate end of relevant block
+                if line:match(end_delimiter) then
+                    in_block = false
+                    goto continue
+                end
+
+                -- Process lines within the relevant block
+                if in_block then
+                    if line:match(pattern) then
+                        -- Extract file, line, and column info from the matched line
+                        local file, line_num, col = line:match("(.+):(%d+):(%d+)")
+                        local error_text = ""
+
+                        -- Capture the full next line as the error or warning description
+                        if i + 1 <= #lines then
+                            error_text = vim.trim(lines[i + 1])
+                        end
+
+                        -- Add the collected information to the quickfix list
+                        table.insert(quickfix_list, {
+                            filename = file,
+                            lnum = tonumber(line_num),
+                            col = tonumber(col),
+                            text = error_text ~= "" and error_text or "No specific error/warning message provided.",
+                        })
+                    end
+                end
+
+                ::continue::
             end
 
             -- Populate the quickfix list with the collected data
