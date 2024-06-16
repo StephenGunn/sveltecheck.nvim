@@ -9,13 +9,13 @@ To run, use the `:SvelteCheck` command.
 ### Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'StephenGunn/sveltecheck-nvim'
+Plug 'StephenGunn/sveltecheck.nvim'
 ```
 
 ### Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
-use 'StephenGunn/sveltecheck-nvim'
+use 'StephenGunn/sveltecheck.nvim'
 ```
 
 ### Using [Lazy](https://github.com/folke/lazy.nvim)
@@ -23,7 +23,7 @@ use 'StephenGunn/sveltecheck-nvim'
 ```lua
 require('lazy').set({
   {
-    'StephenGunn/sveltecheck-nvim',
+    'StephenGunn/sveltecheck.nvim',
     config = function()
       require('plugins.svelte_check')({
         command = "npm run check", -- Override default command if needed
