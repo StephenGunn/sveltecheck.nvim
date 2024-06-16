@@ -11,18 +11,32 @@ local config = vim.deepcopy(default_config)
 
 -- Spinner control variables
 local spinner_index = 1
+
+-- Initialize spinner_timer as nil initially
 local spinner_timer = nil
 
--- Function to start the spinner in the status bar
+-- Function to start the spinner and show a continuous notification
 local function start_spinner()
+    -- Display initial message or prepare for spinner
+    local notification_id = vim.notify("Running Svelte Check...", "info", {
+        timeout = 0, -- Display indefinitely until cleared manually
+    })
+
+    -- Start the spinner animation asynchronously
     spinner_timer = vim.loop.new_timer()
+
+    -- Start the timer with appropriate parameters
     spinner_timer:start(
-        0,
-        100,
+        0, -- initial delay in milliseconds (must be integer)
+        100, -- repeat interval in milliseconds (must be integer)
         vim.schedule_wrap(function()
-            vim.o.statusline = "Checking... " .. config.spinner_frames[spinner_index]
-            spinner_index = (spinner_index % #config.spinner_frames)
-            vim.cmd("redrawstatus")
+            -- Update the notification message with spinner frames
+            vim.notify("Running Svelte Check... " .. config.spinner_frames[spinner_index], "info", {
+                id = notification_id, -- Update existing notification
+                timeout = 0, -- Display indefinitely until cleared manually
+            })
+
+            spinner_index = (spinner_index % #config.spinner_frames) + 1
         end)
     )
 end
