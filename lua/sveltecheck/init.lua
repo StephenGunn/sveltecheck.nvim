@@ -64,31 +64,24 @@ M.run = function()
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            -- Split the output into lines
-            local lines = vim.split(result, "\n")
+            -- Iterate over each match of filepath:line:column
+            for filepath in result:gmatch(pattern) do
+                local file, line, col = filepath:match("(.+):(%d+):(%d+)")
+                local next_line = result:match("\n.-\n", result:find(filepath) + #filepath)
 
-            -- Iterate over lines to find file paths and collect associated error/warning messages
-            for i = 1, #lines do
-                local line = lines[i]
-
-                if line:match(pattern) then
-                    -- Extract file, line, and column info from the matched line
-                    local file, line_num, col = line:match("(.+):(%d+):(%d+)")
-                    local error_text = ""
-
-                    -- Capture the full next line as the error or warning description
-                    if i + 1 <= #lines then
-                        error_text = vim.trim(lines[i + 1])
-                    end
-
-                    -- Add the collected information to the quickfix list
-                    table.insert(quickfix_list, {
-                        filename = file,
-                        lnum = tonumber(line_num),
-                        col = tonumber(col),
-                        text = error_text ~= "" and error_text or "No specific error/warning message provided.",
-                    })
+                if next_line then
+                    next_line = next_line:match("^[^\n]*") -- Extract only the first line after the match
+                    next_line = vim.trim(next_line)
+                else
+                    next_line = "No specific error/warning message provided."
                 end
+
+                table.insert(quickfix_list, {
+                    filename = file,
+                    lnum = tonumber(line),
+                    col = tonumber(col),
+                    text = next_line,
+                })
             end
 
             -- Populate the quickfix list with the collected data
