@@ -60,27 +60,25 @@ M.run = function()
         if event == "stdout" or event == "stderr" then
             local result = table.concat(data, "\n")
 
-            -- Patterns to match file paths with line/column numbers and subsequent lines for error context
+            -- Pattern to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            -- Split the result into lines for easier processing
+            -- Split the output into lines
             local lines = vim.split(result, "\n")
-            local capture = false
 
             for i = 1, #lines do
                 local line = lines[i]
 
+                -- Check if the line matches the pattern
                 if line:match(pattern) then
                     -- Extract file, line, and column info
                     local file, line_num, col = line:match("(.+):(%d+):(%d+)")
                     local error_text = ""
 
-                    -- Capture all lines following the file path line until the next file path or end of output
-                    local j = i + 1
-                    while j <= #lines and not lines[j]:match(pattern) do
-                        error_text = error_text .. lines[j] .. "\n"
-                        j = j + 1
+                    -- Get the next line if available
+                    if i + 1 <= #lines then
+                        error_text = lines[i + 1]:match("^%s*(.-)%s*$") -- Trim whitespace
                     end
 
                     -- Add to quickfix list
@@ -88,11 +86,8 @@ M.run = function()
                         filename = file,
                         lnum = tonumber(line_num),
                         col = tonumber(col),
-                        text = error_text:match(".*"),
+                        text = error_text,
                     })
-
-                    -- Update index to skip processed lines
-                    i = j - 1
                 end
             end
 
