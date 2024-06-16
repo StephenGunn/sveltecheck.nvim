@@ -39,7 +39,7 @@ local function stop_spinner()
 end
 
 -- Function to run the check command and populate the quickfix list
-local function run_check_and_populate_quickfix()
+M.run = function()
     start_spinner()
 
     local function on_output(_, data, event)
@@ -95,10 +95,9 @@ function M.setup(user_config)
         config = vim.tbl_deep_extend("force", config, user_config)
     end
 
-    -- Register the SvelteCheck command if it doesn't exist
-    if not vim.fn.exists(":SvelteCheck") then
-        vim.cmd("command! -nargs=0 SvelteCheck lua require('sveltecheck').run_check_and_populate_quickfix()")
-    end
+    vim.api.nvim_create_user_command(":SvelteCheck", function()
+        M.run()
+    end, { desc = "Run `svelte-check` asynchronously and load the results into a qflist", force = true })
 
     -- Print initialization message
     print("SvelteCheck plugin loaded successfully.")
