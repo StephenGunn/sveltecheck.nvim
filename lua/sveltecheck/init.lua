@@ -1,13 +1,19 @@
 local M = {}
 
-local config = {
-    command = "pnpm run check", -- Default command
-    spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Spinner animation frames
+-- Default configuration
+local default_config = {
+    command = "pnpm run check",
+    spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
 
+-- Current configuration (initialized with defaults)
+local config = vim.deepcopy(default_config)
+
+-- Spinner control variables
 local spinner_index = 1
 local spinner_timer = nil
 
+-- Function to start the spinner in the status bar
 local function start_spinner()
     spinner_timer = vim.loop.new_timer()
     spinner_timer:start(
@@ -35,11 +41,10 @@ end
 -- Function to run the check command and populate the quickfix list
 local function run_check_and_populate_quickfix()
     start_spinner()
+
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
             local result = table.concat(data, "\n")
-
-            -- Pattern to match file paths with line and character numbers
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
@@ -62,7 +67,7 @@ local function run_check_and_populate_quickfix()
         end
     end
 
-    vim.fn.jobstart(config.command, {
+    local job_id = vim.fn.jobstart(config.command, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = function(_, data)
@@ -78,17 +83,21 @@ local function run_check_and_populate_quickfix()
             end
         end,
     })
+
+    -- Ensure job handles are cleaned up properly
+    vim.fn.jobwait({ job_id }, 1000)
 end
 
 -- Function to setup the plugin and register commands
 function M.setup(user_config)
+    -- Merge user-provided config with default config
     if user_config then
-        config.command = user_config.command or config.command
+        config = vim.tbl_deep_extend("force", config, user_config)
     end
 
-    -- Register the SvelteCheck command
+    -- Register the SvelteCheck command if it doesn't exist
     if not vim.fn.exists(":SvelteCheck") then
-        vim.cmd("command! -nargs=0 SvelteCheck lua require('plugins.sveltecheck').run_check_and_populate_quickfix()")
+        vim.cmd("command! -nargs=0 SvelteCheck lua require('sveltecheck').run_check_and_populate_quickfix()")
     end
 
     -- Print initialization message
