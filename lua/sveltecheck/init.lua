@@ -142,8 +142,6 @@ function M.setup(user_config)
     vim.api.nvim_create_user_command("SvelteCheck", function()
         M.run()
     end, { desc = "Run `svelte-check` asynchronously and load the results into a qflist", force = true })
-
-    print("SvelteCheck plugin loaded successfully.")
 end
 
 return M
