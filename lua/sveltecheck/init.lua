@@ -67,7 +67,8 @@ M.run = function()
             -- Split the output into lines
             local lines = vim.split(result, "\n")
 
-            for i = 1, #lines do
+            local i = 1
+            while i <= #lines do
                 local line = lines[i]
 
                 -- Check if the line matches the pattern for file paths
@@ -76,26 +77,40 @@ M.run = function()
                     local file, line_num, col = line:match("(.+):(%d+):(%d+)")
                     local error_text = ""
 
-                    -- Look for the next line to capture the error or warning message
-                    if i + 1 <= #lines then
-                        local next_line = lines[i + 1]:match("^%s*(.-)%s*$") -- Trim whitespace
-                        if next_line:match("^(Error|Warn)") then
+                    -- Gather the following lines as error/warning description until the next file path or end of output
+                    local j = i + 1
+                    while j <= #lines do
+                        local next_line = lines[j]:match("^%s*(.-)%s*$") -- Trim whitespace
+                        -- Break if the next line matches the file path pattern or is empty
+                        if next_line:match(pattern) or next_line == "" then
+                            break
+                        end
+                        -- Accumulate lines for the error text
+                        if error_text == "" then
                             error_text = next_line
                         else
-                            error_text = "No specific error/warning message provided."
+                            error_text = error_text .. " " .. next_line
                         end
+                        j = j + 1
                     end
 
-                    -- Add to quickfix list
+                    -- Add the collected information to the quickfix list
                     table.insert(quickfix_list, {
                         filename = file,
                         lnum = tonumber(line_num),
                         col = tonumber(col),
                         text = error_text,
                     })
+
+                    -- Move the outer loop index to the next unprocessed line
+                    i = j
+                else
+                    -- Move to the next line if no file path match is found
+                    i = i + 1
                 end
             end
 
+            -- Populate the quickfix list with the collected data
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
