@@ -70,15 +70,20 @@ M.run = function()
             for i = 1, #lines do
                 local line = lines[i]
 
-                -- Check if the line matches the pattern
+                -- Check if the line matches the pattern for file paths
                 if line:match(pattern) then
                     -- Extract file, line, and column info
                     local file, line_num, col = line:match("(.+):(%d+):(%d+)")
                     local error_text = ""
 
-                    -- Get the next line if available
+                    -- Look for the next line to capture the error or warning message
                     if i + 1 <= #lines then
-                        error_text = lines[i + 1]:match("^%s*(.-)%s*$") -- Trim whitespace
+                        local next_line = lines[i + 1]:match("^%s*(.-)%s*$") -- Trim whitespace
+                        if next_line:match("^(Error|Warn)") then
+                            error_text = next_line
+                        else
+                            error_text = "No specific error/warning message provided."
+                        end
                     end
 
                     -- Add to quickfix list
