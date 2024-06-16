@@ -59,33 +59,41 @@ M.run = function()
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
             local result = table.concat(data, "\n")
+
+            -- Patterns to match file paths with line/column numbers and subsequent lines for error context
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            -- Iterate over each file path match
-            local start_idx = 1
-            for filepath in string.gmatch(result, pattern) do
-                -- Find the end of the current error block by looking for the next filepath or the end of the message
-                local end_idx = result:find(pattern, start_idx)
-                local error_block
-                if end_idx then
-                    error_block = result:sub(start_idx, end_idx - 1)
-                else
-                    error_block = result:sub(start_idx)
+            -- Split the result into lines for easier processing
+            local lines = vim.split(result, "\n")
+            local capture = false
+
+            for i = 1, #lines do
+                local line = lines[i]
+
+                if line:match(pattern) then
+                    -- Extract file, line, and column info
+                    local file, line_num, col = line:match("(.+):(%d+):(%d+)")
+                    local error_text = ""
+
+                    -- Capture all lines following the file path line until the next file path or end of output
+                    local j = i + 1
+                    while j <= #lines and not lines[j]:match(pattern) do
+                        error_text = error_text .. lines[j] .. "\n"
+                        j = j + 1
+                    end
+
+                    -- Add to quickfix list
+                    table.insert(quickfix_list, {
+                        filename = file,
+                        lnum = tonumber(line_num),
+                        col = tonumber(col),
+                        text = error_text:match(".*"),
+                    })
+
+                    -- Update index to skip processed lines
+                    i = j - 1
                 end
-
-                -- Extract the error message ending with '(ts)' or the full block if no such marker is found
-                local error_text = error_block:match("(.-%b())%s*%b())") or error_block
-
-                local file, line, col = filepath:match("(.+):(%d+):(%d+)")
-                table.insert(quickfix_list, {
-                    filename = file,
-                    lnum = tonumber(line),
-                    col = tonumber(col),
-                    text = error_text:match("Error:.+%b()") or error_text,
-                })
-
-                start_idx = end_idx or #result + 1
             end
 
             if #quickfix_list > 0 then
