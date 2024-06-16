@@ -60,42 +60,33 @@ M.run = function()
         if event == "stdout" or event == "stderr" then
             local result = table.concat(data, "\n")
 
-            -- Pattern to match file paths with line and column numbers
+            -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
             -- Split the output into lines
             local lines = vim.split(result, "\n")
 
-            local i = 1
-            while i <= #lines do
+            -- Iterate over lines to find file paths and collect associated error/warning messages
+            for i = 1, #lines do
                 local line = lines[i]
 
-                -- Check if the line matches the pattern for file paths
                 if line:match(pattern) then
-                    -- Extract file, line, and column info
+                    -- Extract file, line, and column info from the matched line
                     local file, line_num, col = line:match("(.+):(%d+):(%d+)")
                     local error_text = ""
 
-                    -- Gather the following lines as error/warning description until the next file path or end of output
-                    local j = i + 1
-                    while j <= #lines do
+                    -- Collect lines for error/warning description
+                    for j = i + 1, #lines do
                         local next_line = lines[j]
 
-                        -- Stop accumulating when we hit a new file path or an end marker
-                        if
-                            next_line:match(pattern)
-                            or next_line:match("^%s*====")
-                            or next_line:match("^%s*Error: ")
-                            or next_line:match("^%s*Warn: ")
-                        then
+                        -- Stop accumulating if we hit a new file path or the end marker
+                        if next_line:match(pattern) or next_line:match("^%s*====") or next_line:match("^%s*%-%-%-") then
                             break
                         end
 
-                        -- Accumulate lines for the error text
-                        error_text = error_text .. (error_text == "" and "" or " ") .. vim.trim(next_line)
-
-                        j = j + 1
+                        -- Include next line as part of the error text
+                        error_text = error_text .. (error_text == "" and "" or "\n") .. vim.trim(next_line)
                     end
 
                     -- Add the collected information to the quickfix list
@@ -103,14 +94,8 @@ M.run = function()
                         filename = file,
                         lnum = tonumber(line_num),
                         col = tonumber(col),
-                        text = error_text,
+                        text = error_text ~= "" and error_text or "No specific error/warning message provided.",
                     })
-
-                    -- Move the outer loop index to the next unprocessed line
-                    i = j
-                else
-                    -- Move to the next line if no file path match is found
-                    i = i + 1
                 end
             end
 
