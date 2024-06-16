@@ -63,12 +63,12 @@ M.run = function()
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            local capture_pattern = config.capture_full_text and "(.*)" or pattern
+            local capture_pattern = config.full_error_text and "(.*)" or pattern
             for filepath, remainder in result:gmatch("(" .. capture_pattern .. ")(.*)") do
                 local file, line, col = filepath:match("(.+):(%d+):(%d+)")
                 local error_text = "Error found here"
 
-                if config.capture_full_text then
+                if config.full_error_text then
                     error_text = remainder:match("^(.-)\n%(.+") or remainder
                     error_text = string.sub(error_text, 1, 200)
                 end
@@ -80,7 +80,7 @@ M.run = function()
                     text = error_text,
                 })
 
-                if not config.capture_full_text then
+                if not config.full_error_text then
                     break
                 end
             end
