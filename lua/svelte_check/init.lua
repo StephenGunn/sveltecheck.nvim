@@ -1,16 +1,15 @@
 -- lua/plugins/svelte_check.lua
 
--- Ensure we are running inside Neovim's Lua environment
-if vim.api == nil then
-	error("This script must be run inside Neovim!")
-end
+-- Define module table
+local M = {}
 
--- Configuration settings
+-- Configuration
 local config = {
 	command = "pnpm run check", -- Default command to run
 	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Spinner frames for animation
 }
 
+-- Variables for spinner
 local spinner_index = 1
 local spinner_timer = nil
 
@@ -39,7 +38,7 @@ local function stop_spinner()
 	vim.cmd("redrawstatus")
 end
 
--- Function to run the check and populate the quickfix list
+-- Function to run the check and populate quickfix list
 local function run_check_and_populate_quickfix()
 	start_spinner()
 
@@ -85,19 +84,21 @@ local function run_check_and_populate_quickfix()
 	vim.fn.jobwait({ job_id }, 1000)
 end
 
--- Define command to trigger the SvelteCheck functionality
--- Check if the command already exists before defining it
-if not vim.fn.exists(":SvelteCheck") then
-	vim.cmd("command! -nargs=0 SvelteCheck lua require('plugins.svelte_check').run_check_and_populate_quickfix()")
-end
-
--- Debugging: Print a message indicating the script is loaded
-print("SvelteCheck plugin loaded successfully.")
-
--- Optional: Return a setup function for configuration
-return function(user_config)
-	-- Optional: Allow user to configure the command to run
+-- Command registration
+function M.setup(user_config)
 	if user_config then
-		config.command = user_config.command or config.command
+		-- Merge user-provided config with default config
+		config = vim.tbl_deep_extend("force", config, user_config)
 	end
+
+	-- Define command to trigger the SvelteCheck functionality
+	if not vim.fn.exists(":SvelteCheck") then
+		vim.cmd("command! -nargs=0 SvelteCheck lua require('plugins.svelte_check').run_check_and_populate_quickfix()")
+	end
+
+	-- Print initialization message
+	print("SvelteCheck plugin loaded successfully.")
 end
+
+-- Export the module table
+return M
