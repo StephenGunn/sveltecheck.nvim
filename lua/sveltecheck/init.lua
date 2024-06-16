@@ -21,7 +21,7 @@ local function start_spinner()
         100,
         vim.schedule_wrap(function()
             vim.o.statusline = "Checking... " .. config.spinner_frames[spinner_index]
-            spinner_index = (spinner_index % #config.spinner_frames) + 1
+            spinner_index = (spinner_index % #config.spinner_frames)
             vim.cmd("redrawstatus")
         end)
     )
