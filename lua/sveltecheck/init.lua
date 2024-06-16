@@ -60,59 +60,56 @@ M.run = function()
         if event == "stdout" or event == "stderr" then
             local result = table.concat(data, "\n")
 
+            -- Define the minimum number of '=' characters for delimiters
+            local min_delimiter_length = 8
+
+            -- Regular expression to find start and end delimiters
+            local start_delimiter_pattern = "={" .. min_delimiter_length .. ",}"
+            local end_delimiter_pattern = "={" .. min_delimiter_length .. ",}"
+
+            -- Find start and end positions of the main content section
+            local start_pos = result:find(start_delimiter_pattern) or 1
+            local end_pos = result:find(end_delimiter_pattern, start_pos + min_delimiter_length) or #result
+
+            -- Extract the main content section
+            local main_content = result:sub(start_pos, end_pos)
+
             -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
+
+            -- Split the main content section into lines
+            local lines = vim.split(main_content, "\n")
+
+            -- Track whether to capture the next line as error/warning message
+            local capture_next_line = false
             local quickfix_list = {}
 
-            -- Split the output into lines
-            local lines = vim.split(result, "\n")
-
-            -- Track if we are currently within the relevant block (between delimiters)
-            local in_block = false
-            local start_delimiter = "^==+"
-            local end_delimiter = "^==+"
-
-            -- Iterate over lines to find file paths and collect associated error/warning messages
             for i = 1, #lines do
                 local line = lines[i]
 
-                -- Check for start delimiter to indicate beginning of relevant block
-                if line:match(start_delimiter) then
-                    in_block = true
-                    goto continue
-                end
+                -- Check if line matches the file path pattern
+                local filepath = line:match(pattern)
 
-                -- Check for end delimiter to indicate end of relevant block
-                if line:match(end_delimiter) then
-                    in_block = false
-                    goto continue
-                end
+                if filepath then
+                    -- Extract file, line, and column from the matched line
+                    local file, line_num, col = filepath:match("(.+):(%d+):(%d+)")
 
-                -- Process lines within the relevant block
-                if in_block then
-                    -- Match file path pattern
-                    local filepath = line:match(pattern)
-                    if filepath then
-                        local file, line_num, col = filepath:match("(.+):(%d+):(%d+)")
-                        local error_text = ""
+                    -- If the next line exists, capture it as the error or warning message
+                    if i + 1 <= #lines then
+                        local error_text = vim.trim(lines[i + 1])
 
-                        -- Capture the next line as the error or warning description
-                        local next_line = lines[i + 1]
-                        if next_line then
-                            error_text = vim.trim(next_line)
-                        end
-
-                        -- Add the collected information to the quickfix list
+                        -- Add the error/warning to the quickfix list
                         table.insert(quickfix_list, {
                             filename = file,
                             lnum = tonumber(line_num),
                             col = tonumber(col),
                             text = error_text,
                         })
+
+                        -- Move to the line after next in the loop
+                        i = i + 1
                     end
                 end
-
-                ::continue::
             end
 
             -- Populate the quickfix list with the collected data
