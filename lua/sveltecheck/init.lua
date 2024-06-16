@@ -4,6 +4,7 @@ local M = {}
 local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+    full_error_text = false, -- Default to capturing only error messages
 }
 
 -- Current configuration (initialized with defaults)
@@ -62,20 +63,26 @@ M.run = function()
             local pattern = "(/[%w%./_%-]+:%d+:%d+)"
             local quickfix_list = {}
 
-            -- Iterate over each file path match
-            local start_idx = 1
-            for filepath in string.gmatch(result, pattern) do
-                local end_idx = result:find(filepath, start_idx, true) or #result
-                local error_text = result:sub(start_idx, math.min(start_idx + 200, end_idx))
-                start_idx = end_idx + 1
-
+            local capture_pattern = config.capture_full_text and "(.*)" or pattern
+            for filepath, remainder in result:gmatch("(" .. capture_pattern .. ")(.*)") do
                 local file, line, col = filepath:match("(.+):(%d+):(%d+)")
+                local error_text = "Error found here"
+
+                if config.capture_full_text then
+                    error_text = remainder:match("^(.-)\n%(.+") or remainder
+                    error_text = string.sub(error_text, 1, 200)
+                end
+
                 table.insert(quickfix_list, {
                     filename = file,
                     lnum = tonumber(line),
                     col = tonumber(col),
                     text = error_text,
                 })
+
+                if not config.capture_full_text then
+                    break
+                end
             end
 
             if #quickfix_list > 0 then
