@@ -2,6 +2,7 @@ local M = {}
 
 local default_config = {
     command = "pnpm run check",
+    use_telescope = true,
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
     debug_mode = false,
 }
@@ -38,114 +39,138 @@ local function stop_spinner()
     vim.cmd("redrawstatus")
 end
 
-M.run = function()
-    start_spinner()
+local function make_quickfix_list(lines)
+    local quickfix_list = {}
+    local last_line = nil
 
-    local function on_output(_, data, event)
-        local svelte_check_output = table.concat(data, "\n")
-        local lines = vim.split(svelte_check_output, "\n")
+    -- Process each line
+    for _, line in ipairs(lines) do
+        -- Check if the line starts with an epoch timestamp
+        local timestamp = line:match("^%d+")
 
-        if config.debug_mode then
-            print("Output: " .. svelte_check_output)
-            print("Event: " .. event)
-            print("Lines: " .. #lines)
-        end
-
-        local quickfix_list = {}
-        local last_line = nil
-
-        -- Process each line
-        for _, line in ipairs(lines) do
-            if config.debug_mode then
-                print("Processing line: " .. line)
+        if timestamp then
+            if line:match("COMPLETED") then
+                last_line = line
             end
 
-            -- Check if the line starts with an epoch timestamp
-            local timestamp = line:match("^%d+")
+            local error_type, file_path, line_number, column_number, description =
+                line:match('^%d+%s+(%a+)%s+"(.-)"%s+(%d+):(%d+)%s+"(.-)"')
 
-            if timestamp then
-                if line:match("COMPLETED") then
-                    if config.debug_mode then
-                        print("Found COMPLETED line: " .. line)
-                    end
-                    last_line = line
-                end
+            if error_type and file_path and line_number and column_number and description then
+                line_number = tonumber(line_number)
+                column_number = tonumber(column_number)
 
-                local error_type, file_path, line_number, column_number, description =
-                    line:match('^%d+%s+(%a+)%s+"(.-)"%s+(%d+):(%d+)%s+"(.-)"')
-
-                -- Debugging information
-                if config.debug_mode then
-                    print("Timestamp: " .. timestamp)
-                    print("Error Type: " .. (error_type or "nil"))
-                    print("File Path: " .. (file_path or "nil"))
-                    print("Line Number: " .. (line_number or "nil"))
-                    print("Column Number: " .. (column_number or "nil"))
-                    print("Description: " .. (description or "nil"))
-                end
-
-                if error_type and file_path and line_number and column_number and description then
-                    line_number = tonumber(line_number)
-                    column_number = tonumber(column_number)
-
-                    table.insert(quickfix_list, {
-                        filename = file_path,
-                        lnum = line_number,
-                        col = column_number,
-                        text = description,
-                        type = error_type,
-                        nr = 0,
-                        valid = true,
-                    })
-                else
-                    if config.debug_mode then
-                        print("Incomplete match for line: " .. line)
-                    end
-                end
-            else
-                -- Optionally handle non-epoch lines
-                if config.debug_mode then
-                    print("Skipped non-epoch line: " .. line)
-                end
+                table.insert(quickfix_list, {
+                    filename = file_path,
+                    lnum = line_number,
+                    col = column_number,
+                    text = description,
+                    type = error_type,
+                    nr = 0,
+                    valid = true,
+                })
             end
         end
+    end
 
-        if last_line then
-            -- Flexible pattern to capture the statistics
-            local stats_pattern =
-            "^%d+%s+COMPLETED%s+(%d+)%s+FILES%s+(%d+)%s+ERRORS%s+(%d+)%s+WARNINGS%s+(%d+)%s+FILES_WITH_PROBLEMS"
-            local files, errors, warnings, files_with_problems = last_line:match(stats_pattern)
+    if last_line then
+        -- Flexible pattern to capture the statistics
+        local stats_pattern =
+        "^%d+%s+COMPLETED%s+(%d+)%s+FILES%s+(%d+)%s+ERRORS%s+(%d+)%s+WARNINGS%s+(%d+)%s+FILES_WITH_PROBLEMS"
+        local files, errors, warnings, files_with_problems = last_line:match(stats_pattern)
 
-            if config.debug_mode then
-                print("Stats Pattern: " .. stats_pattern)
-                print("Files: " .. (files or "nil"))
-                print("Errors: " .. (errors or "nil"))
-                print("Warnings: " .. (warnings or "nil"))
-                print("Files with Problems: " .. (files_with_problems or "nil"))
-            end
+        if files and errors and warnings and files_with_problems then
+            summary_info = "Svelte Check completed with "
+                .. errors
+                .. " errors and "
+                .. warnings
+                .. " warnings in "
+                .. files
+                .. " files."
+        end
+    end
 
-            if files and errors and warnings and files_with_problems then
-                summary_info = "Svelte Check completed with "
-                    .. errors
-                    .. " errors and "
-                    .. warnings
-                    .. " warnings in "
-                    .. files
-                    .. " files."
-            else
-                -- Handle cases where the line does not match the expected pattern completely
-                if config.debug_mode then
-                    print("Could not extract all stats from COMPLETED line: " .. last_line)
-                end
-            end
+    return quickfix_list
+end
+
+local function on_output(_, data, event)
+    local svelte_check_output = table.concat(data, "\n")
+    local lines = vim.split(svelte_check_output, "\n")
+
+    if config.debug_mode then
+        print("Output: " .. svelte_check_output)
+        print("Event: " .. event)
+        print("Lines: " .. #lines)
+    end
+
+    local quickfix_list = make_quickfix_list(lines)
+
+    if config.use_telescope then
+        if not pcall(require, "telescope") then
+            error("Telescope.nvim not found. Please install it before using this feature.")
         end
 
-        -- If there are items to add to the quickfix list, update and open it
+        local telescope = require("telescope")
+        local pickers = require("telescope.pickers")
+        local finders = require("telescope.finders")
+        local actions = require("telescope.actions")
+        local previewers = require("telescope.previewers")
+        local entry_display = require("telescope.pickers.entry_display")
+
+        local results = {}
+        for _, item in ipairs(quickfix_list) do
+            table.insert(results, {
+                filename = item.filename,
+                lnum = item.lnum,
+                col = item.col,
+                text = item.text,
+                display = entry_display.create({
+                    separator = " ▏",
+                    items = {
+                        { width = 50 },
+                        { width = 10 },
+                        { remaining = true },
+                    },
+                }),
+            })
+        end
+
+        pickers
+            .new({}, {
+                prompt_title = "Svelte Check Results",
+                finder = finders.new_table({
+                    results = results,
+                    entry_maker = function(entry)
+                        return {
+                            valid = true,
+                            value = entry,
+                            ordinal = entry.filename .. ":" .. entry.lnum .. ":" .. entry.col .. " " .. entry.text,
+                            display = entry.display,
+                        }
+                    end,
+                }),
+                sorter = require("telescope.config").values.generic_sorter({}),
+                attach_mappings = function(prompt_bufnr, map)
+                    actions.select_default:replace(function()
+                        local selection = actions.get_selected_entry()
+                        actions.close(prompt_bufnr)
+                        vim.cmd(string.format("%d%s", selection.value.lnum, "G"))
+                        vim.cmd("norm zz")
+                    end)
+                    return true
+                end,
+            })
+            :find()
+    else
         if #quickfix_list > 0 then
             vim.fn.setqflist({}, "r", { title = "Svelte Check", items = quickfix_list })
             vim.cmd("copen")
         end
     end
+end
+
+M.run = function()
+    start_spinner()
 
     local final_command = config.command .. " --output machine"
 
@@ -177,6 +202,12 @@ function M.setup(user_config)
     vim.api.nvim_create_user_command("SvelteCheck", function()
         M.run()
     end, { desc = "Run `svelte-check` asynchronously and load the results into a qflist", force = true })
+
+    if config.use_telescope then
+        vim.api.nvim_create_command("SvelteCheckTelescope", function()
+            M.run()
+        end, { nargs = 0, desc = "Run `svelte-check` asynchronously and load the results into Telescope" })
+    end
 end
 
 return M
