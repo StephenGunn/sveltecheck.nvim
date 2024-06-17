@@ -7,6 +7,9 @@ local default_config = {
 }
 local config = vim.deepcopy(default_config)
 
+-- Variable to store summary information
+local summary_info = ""
+
 -- Spinner control variables
 local spinner_index = 1
 local spinner_timer = nil
@@ -43,6 +46,13 @@ local function stop_spinner()
     end
     vim.o.statusline = ""
     vim.cmd("redrawstatus")
+
+    -- Print summary information
+    if summary_info ~= "" then
+        print(summary_info)
+    else
+        print("No matches found in the output.")
+    end
 end
 
 M.run = function()
@@ -109,7 +119,18 @@ M.run = function()
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
             else
-                print("No matches found in the output.")
+                summary_info = "No errors or warnings found. Nice!"
+            end
+
+            -- Look for summary information in the last few lines
+            local last_lines = vim.split(result, "\n")
+            for i = #last_lines, 1, -1 do
+                local summary_match =
+                    last_lines[i]:match("svelte%-check found %d+ errors? and %d+ warning in %d+ files?")
+                if summary_match then
+                    summary_info = summary_match
+                    break
+                end
             end
         end
     end
@@ -126,7 +147,7 @@ M.run = function()
         on_exit = function(_, exit_code)
             stop_spinner()
             if exit_code ~= 0 then
-                print(config.command .. " command failed with exit code: " .. exit_code)
+                print(summary_info)
             end
         end,
     })
