@@ -60,6 +60,7 @@ M.run = function()
                 end
 
                 start_time = line:match("(%d+) START")
+                start_time = tonumber(start_time)
 
                 if start_time and config.debug_mode then
                     print(type(start_time))
@@ -85,6 +86,7 @@ M.run = function()
                     })
 
                     end_time = line:match("(%d+) COMPLETED")
+                    end_time = tonumber(end_time)
                     if end_time and config.debug_mode then
                         print(type(end_time))
                         print("End time: " .. end_time)
