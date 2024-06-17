@@ -53,7 +53,6 @@ M.run = function()
             end
 
             local quickfix_list = {}
-            local files, errors, warnings, files_with_problems
 
             for _, line in ipairs(lines) do
                 if config.debug_mode then
@@ -77,32 +76,12 @@ M.run = function()
                         nr = 0,
                         valid = true,
                     })
-
-                    files, errors, warnings, files_with_problems = line:match(
-                        "COMPLETED%s+([^%s]+)%s+FILES%s+([^%s]+)%s+ERRORS%s+([^%s]+)%s+WARNINGS%s+([^%s]+)%s+FILES_WITH_PROBLEMS"
-                    )
-
-                    if config.debug_mode then
-                        print("Files: " .. files)
-                        print("Errors: " .. errors)
-                        print("Warnings: " .. warnings)
-                        print("Files with problems: " .. files_with_problems)
-                    end
                 end
             end
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
-            end
-
-            if files and errors and warnings and files_with_problems then
-                summary_info = string.format(
-                    "Svelte Check completed with %s errors and %s warnings in %s files with problems",
-                    errors,
-                    warnings,
-                    files_with_problems
-                )
             end
         end
     end
