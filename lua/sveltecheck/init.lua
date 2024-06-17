@@ -141,7 +141,8 @@ M.run = function()
         end,
         on_exit = function(_, exit_code)
             stop_spinner()
-            if exit_code ~= 0 then
+            print(summary_info)
+            if exit_code > 1 then
                 print(config.command .. " command failed with exit code: " .. exit_code)
             end
         end,
