@@ -106,7 +106,9 @@ M.run = function()
         end
     end
 
-    local job_id = vim.fn.jobstart(config.command .. ' --output "machine"', {
+    local final_command = config.command .. " --output machine"
+
+    local job_id = vim.fn.jobstart(final_command, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = function(_, data)
