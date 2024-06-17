@@ -45,16 +45,6 @@ local function stop_spinner()
     vim.cmd("redrawstatus")
 end
 
-local function extract_summary_info(output)
-    local summary_pattern = "svelte%-check found %d+ errors? and %d+ warnings? in %d+ files?"
-    for line in output:gmatch("[^\r\n]+") do
-        if line:match(summary_pattern) then
-            return line
-        end
-    end
-    return "No errors or warnings found.. nice!"
-end
-
 M.run = function()
     start_spinner()
 
@@ -101,14 +91,20 @@ M.run = function()
                         i = i + 1
                     end
                 end
+
+                -- match against a line that starts with "svelte-check found"
+                local found = line:match("^svelte%-check found")
+                if found then
+                    summary_info = found
+                else
+                    summary_info = "No issues found"
+                end
             end
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
             end
-
-            summary_info = extract_summary_info(main_content)
         end
     end
 
@@ -126,7 +122,6 @@ M.run = function()
 
             if exit_code > 1 then
                 vim.notify("Svelte Check failed with exit code " .. exit_code, "error", {
-                    timeout = 5000,
                     log = false,
                 })
             end
