@@ -124,13 +124,8 @@ M.run = function()
 
             -- Look for summary information in the last few lines
             local last_lines = vim.split(result, "\n")
-            for i = #last_lines, 1, -1 do
-                local summary_match =
-                    last_lines[i]:match("svelte%-check found %d+ errors? and %d+ warning in %d+ files?")
-                if summary_match then
-                    summary_info = summary_match
-                    break
-                end
+            if #last_lines >= 2 then
+                summary_info = last_lines[#last_lines - 1]
             end
         end
     end
@@ -147,7 +142,7 @@ M.run = function()
         on_exit = function(_, exit_code)
             stop_spinner()
             if exit_code ~= 0 then
-                print(summary_info)
+                print(config.command .. " command failed with exit code: " .. exit_code)
             end
         end,
     })
