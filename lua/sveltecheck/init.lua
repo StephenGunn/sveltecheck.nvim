@@ -52,19 +52,11 @@ M.run = function()
             end
 
             local quickfix_list = {}
-            local start_time, end_time, total_time
+            local files, errors, warnings, files_with_problems
 
             for _, line in ipairs(lines) do
                 if config.debug_mode then
                     print(line)
-                end
-
-                start_time = line:match("(%d+) START")
-                start_time = tonumber(start_time)
-
-                if start_time and config.debug_mode then
-                    print(type(start_time))
-                    print("Start time: " .. start_time)
                 end
 
                 local timestamp, error_type, file_path, line_number, column_number, description =
@@ -85,30 +77,24 @@ M.run = function()
                         valid = true,
                     })
 
-                    end_time = line:match("(%d+) COMPLETED")
-                    end_time = tonumber(end_time)
-                    if end_time and config.debug_mode then
-                        print(type(end_time))
-                        print("End time: " .. end_time)
-                    end
+                    files, errors, warnings, files_with_problems = line:match(
+                        "COMPLETED%s+([^%s]+)%s+FILES%s+([^%s]+)%s+ERRORS%s+([^%s]+)%s+WARNINGS%s+([^%s]+)%s+FILES_WITH_PROBLEMS"
+                    )
                 end
-            end
-
-            if start_time and end_time then
-                total_time = end_time - start_time
-                if config.debug_mode then
-                    print("Total time: " .. total_time)
-                end
-                summary_info = "Svelte Check completed in " .. total_time .. "ms"
-            end
-
-            if config.debug_mode then
-                print("Total time: " .. total_time)
             end
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
+            end
+
+            if files and errors and warnings and files_with_problems then
+                summary_info = string.format(
+                    "Svelte Check completed with %s errors and %s warnings in %s files with problems",
+                    errors,
+                    warnings,
+                    files_with_problems
+                )
             end
         end
     end
