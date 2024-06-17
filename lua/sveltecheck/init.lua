@@ -3,7 +3,7 @@ local M = {}
 local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
-    debug_mode = true,
+    debug_mode = false,
 }
 
 local config = vim.deepcopy(default_config)
