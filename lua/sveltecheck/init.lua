@@ -68,9 +68,9 @@ M.run = function()
                     print(line)
                 end
                 start_time = line:match("(%d+) START")
-                if start_time then
-                    start_time = tonumber(start_time)
-                end
+                -- if start_time then
+                --     start_time = tonumber(start_time)
+                -- end
                 local timestamp, error_type, file_path, line_number, column_number, description =
                     line:match('(%d+)%s+(%a+)%s+"(.-)" (%d+):(%d+)%s+"(.-)"')
                 if timestamp and error_type and file_path and line_number and column_number and description then
@@ -88,16 +88,16 @@ M.run = function()
                         valid = true,
                     })
 
-                    end_time = line:match("(%d+) COMPLETED")
-                    if end_time then
-                        end_time = tonumber(end_time)
-                    end
+                    -- end_time = line:match("(%d+) COMPLETED")
+                    -- if end_time then
+                    --     end_time = tonumber(end_time)
+                    -- end
                 end
             end
 
             -- calculate the total time
-            total_time = end_time - start_time
-            print(total_time)
+            -- total_time = end_time - start_time
+            -- print(total_time)
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
