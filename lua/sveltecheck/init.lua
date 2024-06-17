@@ -11,14 +11,18 @@ local spinner_index = 1
 local spinner_timer = nil
 local summary_info = "No errors or warnings found... nice!"
 
+local silent_print = function(msg)
+    vim.api.nvim_echo({ { msg, "Normal" } }, false, {})
+end
+
 local function start_spinner()
-    print("Running Svelte Check... ")
-    spinner_timer = vim.loop.new_timer(_)
+    silent_print("Running Svelte Check... ")
+    spinner_timer = vim.loop.new_timer()
     spinner_timer:start(
         0,
         100,
         vim.schedule_wrap(function()
-            print("Running Svelte Check... " .. config.spinner_frames[spinner_index])
+            silent_print("Running Svelte Check... " .. config.spinner_frames[spinner_index])
             spinner_index = (spinner_index % #config.spinner_frames) + 1
         end)
     )
@@ -38,7 +42,7 @@ M.run = function()
     start_spinner()
 
     local function on_output(_, data, event)
-        if event == "stdout" or event == "stderr" then
+        if event == "stdout" then
             local svelte_check_output = table.concat(data, "\n")
             local lines = vim.split(svelte_check_output, "\n")
 
@@ -77,6 +81,13 @@ M.run = function()
                     files, errors, warnings, files_with_problems = line:match(
                         "COMPLETED%s+([^%s]+)%s+FILES%s+([^%s]+)%s+ERRORS%s+([^%s]+)%s+WARNINGS%s+([^%s]+)%s+FILES_WITH_PROBLEMS"
                     )
+
+                    if config.debug_mode then
+                        print("Files: " .. files)
+                        print("Errors: " .. errors)
+                        print("Warnings: " .. warnings)
+                        print("Files with problems: " .. files_with_problems)
+                    end
                 end
             end
 
@@ -103,9 +114,6 @@ M.run = function()
         stderr_buffered = true,
         on_stdout = function(_, data)
             on_output(_, data, "stdout")
-        end,
-        on_stderr = function(_, data)
-            on_output(_, data, "stderr")
         end,
         on_exit = function(_, exit_code)
             stop_spinner()
