@@ -9,7 +9,7 @@ local default_config = {
 local config = vim.deepcopy(default_config)
 local spinner_index = 1
 local spinner_timer = nil
-local summary = "No errors or warnings found... nice!"
+local summary_info = "No errors or warnings found... nice!"
 
 local function start_spinner()
     print("Running Svelte Check... ")
@@ -113,11 +113,11 @@ M.run = function()
         on_exit = function(_, exit_code)
             stop_spinner()
 
+            print(summary_info)
+
             if exit_code > 1 then
                 print("Svelte Check failed with exit code " .. exit_code)
             end
-
-            print(summary_info)
         end,
     })
 
