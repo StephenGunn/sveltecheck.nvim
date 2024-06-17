@@ -133,6 +133,7 @@ M.run = function()
             stop_spinner()
 
             -- Display the summary information in the statusline
+            print("this is working")
             print(summary_info)
 
             --if exit_code > 1 then
