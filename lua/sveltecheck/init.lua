@@ -61,6 +61,11 @@ M.run = function()
             -- Split the main content section into lines
             local lines = vim.split(main_content, "\n")
 
+            -- save the last two lines as summary info
+            if #lines > 2 then
+                summary_info = lines[#lines - 1] .. " lineswitch " .. lines[#lines]
+            end
+
             -- Track whether to capture the next line as error/warning message
             local quickfix_list = {}
 
