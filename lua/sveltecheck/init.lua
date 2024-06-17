@@ -67,12 +67,12 @@ M.run = function()
                 if config.debug_mode then
                     print(line)
                 end
+
                 start_time = line:match("(%d+) START")
-                -- if start_time then
-                --     start_time = tonumber(start_time)
-                -- end
+
                 local timestamp, error_type, file_path, line_number, column_number, description =
                     line:match('(%d+)%s+(%a+)%s+"(.-)" (%d+):(%d+)%s+"(.-)"')
+
                 if timestamp and error_type and file_path and line_number and column_number and description then
                     timestamp = tonumber(timestamp)
                     line_number = tonumber(line_number)
@@ -88,16 +88,18 @@ M.run = function()
                         valid = true,
                     })
 
-                    -- end_time = line:match("(%d+) COMPLETED")
-                    -- if end_time then
-                    --     end_time = tonumber(end_time)
-                    -- end
+                    end_time = line:match("(%d+) COMPLETED")
                 end
             end
 
-            -- calculate the total time
-            -- total_time = end_time - start_time
-            -- print(total_time)
+            if start_time and end_time then
+                total_time = end_time - start_time
+                summary_info = "Svelte Check completed in " .. total_time .. "ms"
+            end
+
+            if config.debug_mode then
+                print("Total time: " .. total_time)
+            end
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
