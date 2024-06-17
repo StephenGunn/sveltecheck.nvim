@@ -47,27 +47,17 @@ end
 
 M.run = function()
     start_spinner()
-
-    -- Variable to store summary information
     local summary_info = "No summary found"
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
             local main_content = table.concat(data, "\n")
-
-            -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
-
-            -- Split the main content section into lines
             local lines = vim.split(main_content, "\n")
-
-            -- Track whether to capture the next line as error/warning message
             local quickfix_list = {}
 
             for i = 1, #lines do
                 local line = lines[i]
-
-                -- Check if line matches the file path pattern
                 local filepath = line:match(pattern)
 
                 if filepath then
@@ -127,7 +117,6 @@ M.run = function()
                 })
             end
 
-            -- Print the summary information after the process completes
             print(summary_info)
         end,
     })
