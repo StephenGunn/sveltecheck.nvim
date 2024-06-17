@@ -69,8 +69,13 @@ M.run = function()
             -- Extract the main content section
             local main_content = result:sub(start_pos, end_pos)
 
-            -- save the line under the end delimiter as summary_info
+            -- save the content of the line under the end delimiter as summary_info
             summary_info = result:sub(end_pos + 1)
+
+            -- print the summary info to the neovim notification area
+            vim.notify(summary_info, "info", {
+                timeout = 5000,
+            })
 
             -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
