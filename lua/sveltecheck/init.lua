@@ -1,15 +1,19 @@
 local M = {}
 
--- Default configuration
 local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 }
-local config = vim.deepcopy(default_config)
 
--- Spinner control variables
+local config = vim.deepcopy(default_config)
 local spinner_index = 1
 local spinner_timer = nil
+local error_count = 0
+local warning_count = 0
+local start_time = 0
+local end_time = 0
+local total_time = 0
+local summary = "No errors or warnings found... nice!"
 
 local function start_spinner()
     local notification_id = vim.notify("Running Svelte Check...", "info", {
@@ -51,46 +55,36 @@ M.run = function()
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
-            local main_content = table.concat(data, "\n")
+            local svelte_check_output = table.concat(data, "\n")
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
-            local lines = vim.split(main_content, "\n")
+            local lines = vim.split(svelte_check_output, "\n")
             local quickfix_list = {}
 
-            for i = 1, #lines do
-                local line = lines[i]
-                local filepath = line:match(pattern)
+            for _, line in ipairs(lines) do
+                start_time = line:match("(%d+) START")
+                local timestamp, error_type, file_path, line_number, column_number, description =
+                    line:match('(%d+)%s+(%a+)%s+"(.-)" (%d+):(%d+)%s+"(.-)"')
+                if timestamp and error_type and file_path and line_number and column_number and description then
+                    timestamp = tonumber(timestamp)
+                    line_number = tonumber(line_number)
+                    column_number = tonumber(column_number)
 
-                if filepath then
-                    -- Extract file, line, and column from the matched line
-                    local file, line_num, col = filepath:match("(.+):(%d+):(%d+)")
+                    table.insert(quickfix_list, {
+                        filename = file_path,
+                        lnum = line_number,
+                        col = column_number,
+                        text = description,
+                        type = error_type, -- Assuming error_type is "ERROR" or "WARNING"
+                        nr = 0,
+                        valid = true,
+                    })
 
-                    -- If the next line exists, capture it as the error or warning message
-                    if i + 1 <= #lines then
-                        local error_text = vim.trim(lines[i + 1])
-
-                        -- Add the error/warning to the quickfix list
-                        local entry = {
-                            filename = file,
-                            lnum = tonumber(line_num),
-                            col = tonumber(col),
-                            text = error_text,
-                        }
-                        table.insert(quickfix_list, entry)
-
-                        -- Move to the line after next in the loop
-                        i = i + 1
-                    end
+                    end_time = line:match("(%d+) COMPLETED")
                 end
             end
 
-            -- Find the summary line (the last line that starts with "svelte-check")
-            for i = #lines, 1, -1 do
-                local line = lines[i]
-                if line:match("^svelte%-check") then
-                    summary_info = line
-                    break
-                end
-            end
+            -- calculate the total time
+            total_time = end_time - start_time
 
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
