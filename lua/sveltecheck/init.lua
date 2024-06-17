@@ -17,7 +17,7 @@ local function start_spinner()
         log = false,
     })
 
-    spinner_timer = vim.loop.new_timer()
+    spinner_timer = vim.loop.new_timer(_)
 
     spinner_timer:start(
         0, -- initial delay in milliseconds (must be integer)
@@ -92,12 +92,9 @@ M.run = function()
                     end
                 end
 
-                -- match against a line that starts with "svelte-check found"
-                local found = line:match("^svelte%-check found")
-                if found then
-                    summary_info = found
-                else
-                    summary_info = "No issues found"
+                -- Print out the last 2 lines
+                if i == #lines - 1 then
+                    summary_info = summary_info .. lines[i] .. "\n"
                 end
             end
 
