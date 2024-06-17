@@ -107,18 +107,15 @@ M.run = function()
                 end
             end
 
-            -- Populate the quickfix list with the collected data
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
-
-                -- Get the 2nd to last line of the lines
-                summary_info = lines[#lines - 1]
-                print(summary_info)
-                print("this is working2")
-            else
-                summary_info = "No errors or warnings found. Nice!"
             end
+
+            -- Get the 2nd to last line of the lines
+            summary_info = lines[#lines - 1]
+            print(summary_info)
+            print("this is working2")
         end
     end
 
@@ -138,6 +135,8 @@ M.run = function()
             print("this is working on exit")
             print(summary_info)
 
+            -- type check the exit_code variable and print it
+            print(type(exit_code))
             --if exit_code > 1 then
             --   print(config.command .. " command failed with exit code: " .. exit_code)
             --end
