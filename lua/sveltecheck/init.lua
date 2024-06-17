@@ -70,6 +70,10 @@ M.run = function()
 
                 start_time = line:match("(%d+) START")
 
+                if start_time and config.debug_mode then
+                    print("Start time: " .. start_time)
+                end
+
                 local timestamp, error_type, file_path, line_number, column_number, description =
                     line:match('(%d+)%s+(%a+)%s+"(.-)" (%d+):(%d+)%s+"(.-)"')
 
@@ -89,6 +93,9 @@ M.run = function()
                     })
 
                     end_time = line:match("(%d+) COMPLETED")
+                    if end_time and config.debug_mode then
+                        print("End time: " .. end_time)
+                    end
                 end
             end
 
