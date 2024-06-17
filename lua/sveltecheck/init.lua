@@ -65,6 +65,9 @@ M.run = function()
 
             if timestamp then
                 if line:match("COMPLETED") then
+                    if config.debug_mode then
+                        print("Found COMPLETED line: " .. line)
+                    end
                     last_line = line
                 end
 
@@ -90,7 +93,7 @@ M.run = function()
                         lnum = line_number,
                         col = column_number,
                         text = description,
-                        type = error_type:sub(1, 1), -- "E" for ERROR, "W" for WARNING, assuming type is "ERROR" or "WARNING"
+                        type = error_type,
                         nr = 0,
                         valid = true,
                     })
@@ -112,6 +115,14 @@ M.run = function()
             local stats_pattern =
             "^%d+%s+COMPLETED%s+(%d+)%s+FILES%s+(%d+)%s+ERRORS%s+(%d+)%s+WARNINGS%s+(%d+)%s+FILES_WITH_PROBLEMS"
             local files, errors, warnings, files_with_problems = last_line:match(stats_pattern)
+
+            if config.debug_mode then
+                print("Stats Pattern: " .. stats_pattern)
+                print("Files: " .. (files or "nil"))
+                print("Errors: " .. (errors or "nil"))
+                print("Warnings: " .. (warnings or "nil"))
+                print("Files with Problems: " .. (files_with_problems or "nil"))
+            end
 
             if files and errors and warnings and files_with_problems then
                 summary_info = "Svelte Check completed with "
