@@ -45,6 +45,16 @@ local function stop_spinner()
     vim.cmd("redrawstatus")
 end
 
+local function extract_summary_info(output)
+    local summary_pattern = "svelte%-check found %d+ errors? and %d+ warnings? in %d+ files?"
+    for line in output:gmatch("[^\r\n]+") do
+        if line:match(summary_pattern) then
+            return line
+        end
+    end
+    return "No errors or warnings found.. nice!"
+end
+
 M.run = function()
     start_spinner()
 
@@ -60,11 +70,6 @@ M.run = function()
 
             -- Split the main content section into lines
             local lines = vim.split(main_content, "\n")
-
-            -- save the last two lines as summary info
-            if #lines > 2 then
-                summary_info = lines[#lines - 1] .. " lineswitch " .. lines[#lines]
-            end
 
             -- Track whether to capture the next line as error/warning message
             local quickfix_list = {}
@@ -102,6 +107,8 @@ M.run = function()
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
             end
+
+            summary_info = extract_summary_info(main_content)
         end
     end
 
@@ -116,10 +123,12 @@ M.run = function()
         end,
         on_exit = function(_, exit_code)
             stop_spinner()
-            if summary_info == "" then
-                summary_info = "summary info was empty, no errors or warnings found!"
-            else
-                summary_info = "Summary: " .. summary_info
+
+            if exit_code > 1 then
+                vim.notify("Svelte Check failed with exit code " .. exit_code, "error", {
+                    timeout = 5000,
+                    log = false,
+                })
             end
             print(summary_info)
         end,
