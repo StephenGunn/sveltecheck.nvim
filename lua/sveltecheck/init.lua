@@ -142,7 +142,7 @@ M.run = function()
 
         -- If there are items to add to the quickfix list, update and open it
         if #quickfix_list > 0 then
-            vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
+            vim.fn.setqflist({}, "r", { title = "Svelte Check", items = quickfix_list })
             vim.cmd("copen")
         end
     end
