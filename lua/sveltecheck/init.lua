@@ -52,6 +52,7 @@ M.run = function()
         end
 
         local quickfix_list = {}
+        local last_line = nil
 
         -- Process each line
         for _, line in ipairs(lines) do
@@ -63,7 +64,10 @@ M.run = function()
             local timestamp = line:match("^%d+")
 
             if timestamp then
-                -- Extract details from lines starting with an epoch
+                if line:match("COMPLETED") then
+                    last_line = line
+                end
+
                 local error_type, file_path, line_number, column_number, description =
                     line:match('^%d+%s+(%a+)%s+"(.-)"%s+(%d+):(%d+)%s+"(.-)"')
 
@@ -77,13 +81,10 @@ M.run = function()
                     print("Description: " .. (description or "nil"))
                 end
 
-                -- Ensure that all captured components are valid
                 if error_type and file_path and line_number and column_number and description then
-                    -- Convert the numbers from strings to actual numbers
                     line_number = tonumber(line_number)
                     column_number = tonumber(column_number)
 
-                    -- Insert the details into the quickfix list
                     table.insert(quickfix_list, {
                         filename = file_path,
                         lnum = line_number,
@@ -94,7 +95,6 @@ M.run = function()
                         valid = true,
                     })
                 else
-                    -- Handle the case where not all components could be matched
                     if config.debug_mode then
                         print("Incomplete match for line: " .. line)
                     end
@@ -103,6 +103,28 @@ M.run = function()
                 -- Optionally handle non-epoch lines
                 if config.debug_mode then
                     print("Skipped non-epoch line: " .. line)
+                end
+            end
+        end
+
+        if last_line then
+            -- Flexible pattern to capture the statistics
+            local stats_pattern =
+            "^%d+%s+COMPLETED%s+(%d+)%s+FILES%s+(%d+)%s+ERRORS%s+(%d+)%s+WARNINGS%s+(%d+)%s+FILES_WITH_PROBLEMS"
+            local files, errors, warnings, files_with_problems = last_line:match(stats_pattern)
+
+            if files and errors and warnings and files_with_problems then
+                summary_info = "Svelte Check completed with "
+                    .. errors
+                    .. " errors and "
+                    .. warnings
+                    .. " warnings in "
+                    .. files
+                    .. " files."
+            else
+                -- Handle cases where the line does not match the expected pattern completely
+                if config.debug_mode then
+                    print("Could not extract all stats from COMPLETED line: " .. last_line)
                 end
             end
         end
