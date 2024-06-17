@@ -15,22 +15,15 @@ local total_time = 0
 local summary = "No errors or warnings found... nice!"
 
 local function start_spinner()
-    local notification_id = vim.notify("Running Svelte Check...", "info", {
-        timeout = 0,
-        log = false,
-    })
+    print("Running Svelte Check... ")
 
-    spinner_timer = vim.loop.new_timer()
+    spinner_timer = vim.loop.new_timer(_)
 
     spinner_timer:start(
         0,
         100,
         vim.schedule_wrap(function()
-            vim.notify("Running Svelte Check... " .. config.spinner_frames[spinner_index], "info", {
-                id = notification_id,
-                log = false,
-            })
-
+            print("Running Svelte Check... " .. config.spinner_frames[spinner_index])
             spinner_index = (spinner_index % #config.spinner_frames) + 1
         end)
     )
@@ -132,9 +125,7 @@ M.run = function()
             stop_spinner()
 
             if exit_code > 1 then
-                vim.notify("Svelte Check failed with exit code " .. exit_code, "error", {
-                    log = false,
-                })
+                print("Svelte Check failed with exit code " .. exit_code)
             end
 
             print(summary_info)
