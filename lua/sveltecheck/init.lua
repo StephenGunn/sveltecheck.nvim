@@ -64,6 +64,9 @@ M.run = function()
             local quickfix_list = {}
 
             for _, line in ipairs(lines) do
+                if config.debug_mode then
+                    print(line)
+                end
                 start_time = line:match("(%d+) START")
                 if start_time then
                     start_time = tonumber(start_time)
