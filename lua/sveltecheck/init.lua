@@ -69,10 +69,8 @@ M.run = function()
             -- Extract the main content section
             local main_content = result:sub(start_pos, end_pos)
 
-            -- get the last lines from result
-            local last_lines = result:sub(-10)
-
-            print(last_lines)
+            -- save the line under the end delimiter as summary_info
+            summary_info = result:sub(end_pos + 1)
 
             -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
@@ -115,6 +113,8 @@ M.run = function()
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
+            else
+                summary_info = "No errors or warnings found, nice!"
             end
         end
     end
@@ -130,6 +130,11 @@ M.run = function()
         end,
         on_exit = function(_, exit_code)
             stop_spinner()
+            if summary_info == "" then
+                summary_info = "summary info was empty, no errors or warnings found!"
+            else
+                summary_info = "Summary: " .. summary_info
+            end
             print(summary_info)
         end,
     })
