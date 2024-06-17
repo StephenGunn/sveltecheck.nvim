@@ -114,6 +114,8 @@ M.run = function()
 
                 -- Get the 2nd to last line of the lines
                 summary_info = lines[#lines - 1]
+                print(summary_info)
+                print("this is working2")
             else
                 summary_info = "No errors or warnings found. Nice!"
             end
