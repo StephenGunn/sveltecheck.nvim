@@ -118,14 +118,11 @@ M.run = function()
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
+
+                -- add the last line as summary info
+                summary_info = lines[#lines]
             else
                 summary_info = "No errors or warnings found. Nice!"
-            end
-
-            -- Look for summary information in the last few lines
-            local last_lines = vim.split(result, "\n")
-            if #last_lines >= 2 then
-                summary_info = last_lines[#last_lines - 1]
             end
         end
     end
@@ -143,7 +140,9 @@ M.run = function()
             stop_spinner()
 
             -- Print
-            print(summary_info)
+            if exit_code > 1 then
+                print(config.command .. " command failed with exit code: " .. exit_code)
+            end
         end,
     })
 
