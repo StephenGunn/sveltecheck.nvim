@@ -118,8 +118,6 @@ M.run = function()
             if #quickfix_list > 0 then
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
-            else
-                summary_info = "No errors or warnings found, nice!"
             end
         end
     end
