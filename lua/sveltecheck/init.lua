@@ -42,47 +42,75 @@ M.run = function()
     start_spinner()
 
     local function on_output(_, data, event)
-        if event == "stdout" then
-            local svelte_check_output = table.concat(data, "\n")
-            local lines = vim.split(svelte_check_output, "\n")
+        local svelte_check_output = table.concat(data, "\n")
+        local lines = vim.split(svelte_check_output, "\n")
 
+        if config.debug_mode then
+            print("Output: " .. svelte_check_output)
+            print("Event: " .. event)
+            print("Lines: " .. #lines)
+        end
+
+        local quickfix_list = {}
+
+        -- Process each line
+        for _, line in ipairs(lines) do
             if config.debug_mode then
-                print("Output: " .. svelte_check_output)
-                print("Event: " .. event)
-                print("Lines: " .. #lines)
+                print("Processing line: " .. line)
             end
 
-            local quickfix_list = {}
+            -- Check if the line starts with an epoch timestamp
+            local timestamp = line:match("^%d+")
 
-            for _, line in ipairs(lines) do
+            if timestamp then
+                -- Extract details from lines starting with an epoch
+                local error_type, file_path, line_number, column_number, description =
+                    line:match('^%d+%s+(%a+)%s+"(.-)"%s+(%d+):(%d+)%s+"(.-)"')
+
+                -- Debugging information
                 if config.debug_mode then
-                    print(line)
+                    print("Timestamp: " .. timestamp)
+                    print("Error Type: " .. (error_type or "nil"))
+                    print("File Path: " .. (file_path or "nil"))
+                    print("Line Number: " .. (line_number or "nil"))
+                    print("Column Number: " .. (column_number or "nil"))
+                    print("Description: " .. (description or "nil"))
                 end
 
-                local timestamp, error_type, file_path, line_number, column_number, description =
-                    line:match('(%d+)%s+(%a+)%s+"(.-)" (%d+):(%d+)%s+"(.-)"')
-
-                if timestamp and error_type and file_path and line_number and column_number and description then
-                    timestamp = tonumber(timestamp)
+                -- Ensure that all captured components are valid
+                if error_type and file_path and line_number and column_number and description then
+                    -- Convert the numbers from strings to actual numbers
                     line_number = tonumber(line_number)
                     column_number = tonumber(column_number)
 
+                    -- Insert the details into the quickfix list
                     table.insert(quickfix_list, {
                         filename = file_path,
                         lnum = line_number,
                         col = column_number,
                         text = description,
-                        type = error_type, -- Assuming error_type is "ERROR" or "WARNING"
+                        type = error_type:sub(1, 1), -- "E" for ERROR, "W" for WARNING, assuming type is "ERROR" or "WARNING"
                         nr = 0,
                         valid = true,
                     })
+                else
+                    -- Handle the case where not all components could be matched
+                    if config.debug_mode then
+                        print("Incomplete match for line: " .. line)
+                    end
+                end
+            else
+                -- Optionally handle non-epoch lines
+                if config.debug_mode then
+                    print("Skipped non-epoch line: " .. line)
                 end
             end
+        end
 
-            if #quickfix_list > 0 then
-                vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
-                vim.cmd("copen")
-            end
+        -- If there are items to add to the quickfix list, update and open it
+        if #quickfix_list > 0 then
+            vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
+            vim.cmd("copen")
         end
     end
 
