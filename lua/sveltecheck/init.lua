@@ -13,9 +13,7 @@ local summary_info = "No errors or warnings found... nice!"
 
 local function start_spinner()
     print("Running Svelte Check... ")
-
     spinner_timer = vim.loop.new_timer(_)
-
     spinner_timer:start(
         0,
         100,
@@ -43,11 +41,11 @@ M.run = function()
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
             local svelte_check_output = table.concat(data, "\n")
-            local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
             local lines = vim.split(svelte_check_output, "\n")
 
-            -- if debug mode is on, print how many lines we have
             if config.debug_mode then
+                print("Output: " .. svelte_check_output)
+                print("Event: " .. event)
                 print("Lines: " .. #lines)
             end
 
