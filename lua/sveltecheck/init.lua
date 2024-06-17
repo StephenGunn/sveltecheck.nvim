@@ -17,7 +17,7 @@ local function start_spinner()
         log = false,
     })
 
-    spinner_timer = vim.loop.new_timer(_)
+    spinner_timer = vim.loop.new_timer()
 
     spinner_timer:start(
         0, -- initial delay in milliseconds (must be integer)
@@ -49,7 +49,7 @@ M.run = function()
     start_spinner()
 
     -- Variable to store summary information
-    local summary_info = ""
+    local summary_info = "No summary found"
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
@@ -91,10 +91,14 @@ M.run = function()
                         i = i + 1
                     end
                 end
+            end
 
-                -- Print out the last 2 lines
-                if i == #lines - 1 then
-                    summary_info = summary_info .. lines[i] .. "\n"
+            -- Find the summary line (the last line that starts with "svelte-check")
+            for i = #lines, 1, -1 do
+                local line = lines[i]
+                if line:match("^svelte%-check") then
+                    summary_info = line
+                    break
                 end
             end
 
@@ -122,6 +126,8 @@ M.run = function()
                     log = false,
                 })
             end
+
+            -- Print the summary information after the process completes
             print(summary_info)
         end,
     })
