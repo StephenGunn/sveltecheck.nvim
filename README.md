@@ -1,59 +1,103 @@
 # sveltecheck.nvim
 
-SvelteCheck is a Neovim plugin designed to run `svelte-check` asynchronously and load the results into the quickfix list for easy navigation through errors and warnings in Svelte projects.
-
-## Features
-
-- **Asynchronous Execution**: Runs `svelte-check` in the background without blocking Neovim.
-- **Quickfix List Integration**: Directly populates the quickfix list with errors and warnings found.
-- **Customizable**: Supports configuration to tweak the command to run and spinner animation frames.
+A Neovim plugin that runs `svelte-check` asynchronously, displays a spinner while running, and populates the quickfix list with the results.
 
 ## Installation
 
-Ensure you have Neovim (0.5.0+) with Lua support enabled (`nvim --version` to check). Install using your favorite plugin manager:
+### Using `lazy.nvim`
 
-### Using Plug (example)
-
-```vim
-Plug 'StephenGunn/SvelteCheck'
-```
-
-Then reload Neovim and run `:PlugInstall`.
-
-## Usage
-
-### Commands
-
-- `:SvelteCheck`: Execute `pnpm run check` (default) asynchronously and load the results into the quickfix list.
-
-### Configuration
-
-You can customize the behavior of SvelteCheck by overriding default configurations in your `init.lua` (for Neovim's Lua configuration).
+1. Ensure `lazy.nvim` is set up in your Neovim configuration.
+2. Add the plugin to your plugin list:
 
 ```lua
--- Example configuration
-require('SvelteCheck').setup({
-    command = "pnpm run check", -- Command to run for checking (default: "pnpm run check")
-    spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" }, -- Frames for spinner animation
+-- lazy.nvim plugin configuration
+require('lazy').setup({
+    {
+        'StephenGunn/sveltecheck.nvim',
+        config = function()
+            require('svelte-check').setup({
+                command = "pnpm run check", -- Default command for pnpm
+            })
+        end,
+    },
 })
 ```
 
-### Notifications and Status
+### Using `packer.nvim`
 
-SvelteCheck provides feedback during execution:
+1. Ensure `packer.nvim` is set up in your Neovim configuration.
+2. Add the plugin to your plugin list:
 
-- **Spinner Animation**: Displays a spinner while `svelte-check` runs.
-- **Notifications**: Uses Neovim's `vim.notify` to inform about the current operation.
+```lua
+-- packer.nvim plugin configuration
+return require('packer').startup(function(use)
+    use {
+        'StephenGunn/sveltecheck.nvim',
+        config = function()
+            require('svelte-check').setup({
+                command = "pnpm run check", -- Default command for pnpm
+            })
+        end
+    }
 
-## Contributing
-
-Contributions are welcome! Feel free to open issues for bugs, suggestions, or improvements.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
+    -- Add other plugins as needed
+end)
 ```
 
-This template provides comprehensive documentation for your SvelteCheck plugin on GitHub, covering installation, usage, configuration, notifications, contributing guidelines, and licensing information.
+## Usage
+
+After installation, run the `svelte-check` command in Neovim:
+
+```vim
+:SvelteCheck
+```
+
+This command will start the `svelte-check` process, display a spinner, and populate the quickfix list with any errors or warnings found. A summary of the check will be printed upon completion.
+
+## Customization
+
+Customize the plugin by passing configuration options to the `setup` function. The available option is:
+
+- `command` (string): The command to run `svelte-check` (default: `"pnpm run check"`).
+
+### Example Customization
+
+```lua
+require('svelte-check').setup({
+    command = "npm run svelte-check", -- Custom command for npm
+})
+```
+
+### Using with `lazy.nvim` and `packer.nvim`
+
+**`lazy.nvim` Customization Example:**
+
+```lua
+require('lazy').setup({
+    {
+        'StephenGunn/sveltecheck.nvim',
+        config = function()
+            require('svelte-check').setup({
+                command = "npm run svelte-check",
+            })
+        end,
+    },
+})
+```
+
+**`packer.nvim` Customization Example:**
+
+```lua
+return require('packer').startup(function(use)
+    use {
+        'StephenGunn/sveltecheck.nvim',
+        config = function()
+            require('svelte-check').setup({
+                command = "npm run svelte-check",
+            })
+        end
+    }
+
+    -- Add other plugins as needed
+end)
 ```
