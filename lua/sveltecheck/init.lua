@@ -53,29 +53,7 @@ M.run = function()
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
-            local result = table.concat(data, "\n")
-
-            -- Define the minimum number of '=' characters for delimiters
-            local min_delimiter_length = 8
-
-            -- Regular expression to find start and end delimiters
-            local start_delimiter_pattern = "={" .. min_delimiter_length .. ",}"
-            local end_delimiter_pattern = "={" .. min_delimiter_length .. ",}"
-
-            -- Find start and end positions of the main content section
-            local start_pos = result:find(start_delimiter_pattern) or 1
-            local end_pos = result:find(end_delimiter_pattern, start_pos + min_delimiter_length) or #result
-
-            -- Extract the main content section
-            local main_content = result:sub(start_pos, end_pos)
-
-            -- save the content of the line under the end delimiter as summary_info
-            summary_info = result:sub(end_pos + 1)
-
-            -- print the summary info to the neovim notification area
-            vim.notify(summary_info, "info", {
-                timeout = 5000,
-            })
+            local main_content = table.concat(data, "\n")
 
             -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
