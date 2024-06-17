@@ -36,7 +36,6 @@ end
 
 M.run = function()
     start_spinner()
-    local summary_info = "No summary found"
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
