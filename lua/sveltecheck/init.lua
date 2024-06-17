@@ -69,6 +69,11 @@ M.run = function()
             -- Extract the main content section
             local main_content = result:sub(start_pos, end_pos)
 
+            -- get the last lines from result
+            local last_lines = result:sub(-1)
+
+            print(last_lines)
+
             -- Regular expression to match file paths with line and column numbers
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
 
@@ -112,8 +117,9 @@ M.run = function()
                 vim.cmd("copen")
             end
 
+            --
             -- Get the 2nd to last line of the lines
-            summary_info = lines[#lines - 1]
+            summary_info = last_lines
             print(summary_info)
             print("this is working2")
         end
