@@ -7,9 +7,6 @@ local default_config = {
 }
 local config = vim.deepcopy(default_config)
 
--- Variable to store summary information
-local summary_info = ""
-
 -- Spinner control variables
 local spinner_index = 1
 local spinner_timer = nil
@@ -46,17 +43,13 @@ local function stop_spinner()
     end
     vim.o.statusline = ""
     vim.cmd("redrawstatus")
-
-    -- Print summary information
-    if summary_info ~= "" then
-        print(summary_info)
-    else
-        print("No matches found in the output.")
-    end
 end
 
 M.run = function()
     start_spinner()
+
+    -- Variable to store summary information
+    local summary_info = ""
 
     local function on_output(_, data, event)
         if event == "stdout" or event == "stderr" then
@@ -119,8 +112,8 @@ M.run = function()
                 vim.fn.setqflist({}, "r", { title = config.command .. " output", items = quickfix_list })
                 vim.cmd("copen")
 
-                -- add the last line as summary info
-                summary_info = lines[#lines]
+                -- Get the 2nd to last line of the lines
+                summary_info = lines[#lines - 1]
             else
                 summary_info = "No errors or warnings found. Nice!"
             end
@@ -139,10 +132,12 @@ M.run = function()
         on_exit = function(_, exit_code)
             stop_spinner()
 
-            -- Print
-            if exit_code > 1 then
-                print(config.command .. " command failed with exit code: " .. exit_code)
-            end
+            -- Display the summary information in the statusline
+            print(summary_info)
+
+            --if exit_code > 1 then
+            --   print(config.command .. " command failed with exit code: " .. exit_code)
+            --end
         end,
     })
 
