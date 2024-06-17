@@ -16,16 +16,18 @@ local silent_print = function(msg)
 end
 
 local function start_spinner()
-    silent_print("Running Svelte Check... ")
-    spinner_timer = vim.loop.new_timer()
-    spinner_timer:start(
-        0,
-        100,
-        vim.schedule_wrap(function()
-            silent_print("Running Svelte Check... " .. config.spinner_frames[spinner_index])
-            spinner_index = (spinner_index % #config.spinner_frames) + 1
-        end)
-    )
+    if spinner_timer then
+        -- Stop the timer if it's already running
+        spinner_timer:stop()
+    end
+
+    -- Start a new timer using vim.defer_fn
+    spinner_timer = vim.defer_fn(function()
+        silent_print("Running Svelte Check... " .. config.spinner_frames[spinner_index])
+        spinner_index = (spinner_index % #config.spinner_frames) + 1
+        -- Schedule the next execution
+        start_spinner()
+    end, 100)
 end
 
 local function stop_spinner()
