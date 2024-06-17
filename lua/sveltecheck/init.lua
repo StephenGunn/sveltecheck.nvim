@@ -3,6 +3,7 @@ local M = {}
 local default_config = {
     command = "pnpm run check",
     spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
+    debug_mode = true,
 }
 
 local config = vim.deepcopy(default_config)
@@ -54,6 +55,12 @@ M.run = function()
             local svelte_check_output = table.concat(data, "\n")
             local pattern = "(/[%w%./_%-%+]+:%d+:%d+)"
             local lines = vim.split(svelte_check_output, "\n")
+
+            -- if debug mode is on, print how many lines we have
+            if config.debug_mode then
+                print("Lines: " .. #lines)
+            end
+
             local quickfix_list = {}
 
             for _, line in ipairs(lines) do
