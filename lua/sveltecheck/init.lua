@@ -9,9 +9,6 @@ local default_config = {
 local config = vim.deepcopy(default_config)
 local spinner_index = 1
 local spinner_timer = nil
-local start_time = 0
-local end_time = 0
-local total_time = 0
 local summary = "No errors or warnings found... nice!"
 
 local function start_spinner()
@@ -55,6 +52,7 @@ M.run = function()
             end
 
             local quickfix_list = {}
+            local start_time, end_time, total_time
 
             for _, line in ipairs(lines) do
                 if config.debug_mode then
@@ -96,6 +94,9 @@ M.run = function()
 
             if start_time and end_time then
                 total_time = end_time - start_time
+                if config.debug_mode then
+                    print("Total time: " .. total_time)
+                end
                 summary_info = "Svelte Check completed in " .. total_time .. "ms"
             end
 
