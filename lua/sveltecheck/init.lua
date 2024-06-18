@@ -4,7 +4,6 @@ local default_config = {
 	command = "pnpm run check",
 	spinner_frames = { "⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷" },
 	debug_mode = false,
-	open_quickfix_fullscreen = false,
 }
 
 local config = vim.deepcopy(default_config)
@@ -39,16 +38,6 @@ local function stop_spinner()
 	end
 	vim.o.statusline = ""
 	vim.cmd("redrawstatus")
-end
-
-function M.open_quickfix_full()
-	if config.open_quickfix_fullscreen then
-		local winid = vim.fn.bufwinnr("^Quickfix$")
-		if winid ~= -1 then
-			vim.cmd(tostring(winid) .. "wincmd w")
-			vim.cmd("resize " .. vim.o.lines)
-		end
-	end
 end
 
 M.run = function()
