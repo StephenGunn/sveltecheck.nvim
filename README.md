@@ -4,7 +4,7 @@ A Neovim plugin that runs `svelte-check` asynchronously, displays a spinner whil
 
 https://github.com/StephenGunn/sveltecheck.nvim/assets/7240548/99c3549e-2c54-4c1a-ab70-16d463e3e4ad
 
-Inpired by [dmmulroy/tsc.nvim](https://github.com/dmmulroy/tsc.nvim)
+Inspired by [dmmulroy/tsc.nvim](https://github.com/dmmulroy/tsc.nvim)
 
 ## Installation
 
